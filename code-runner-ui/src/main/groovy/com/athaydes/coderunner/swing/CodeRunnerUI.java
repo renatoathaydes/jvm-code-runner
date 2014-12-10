@@ -15,7 +15,7 @@ public class CodeRunnerUI {
     private MainView mainView;
 
     public CodeRunnerUI(@Requires CompositeCodeRunner codeRunner) {
-        mainView = new MainView(new ResilientCodeRunner(codeRunner));
+        mainView = new MainView(new SafeCodeRunner(codeRunner));
     }
 
     @Validate
@@ -27,32 +27,6 @@ public class CodeRunnerUI {
     public void stop() {
         if (mainView != null)
             mainView.destroy();
-    }
-
-    private static class ResilientCodeRunner implements CompositeCodeRunner {
-
-        private final CompositeCodeRunner delegate;
-
-        private ResilientCodeRunner(CompositeCodeRunner delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public String runScript(String language, String script) {
-            try {
-                return delegate.runScript(language, script);
-            } catch (LanguageNotAvailableException | RemoteException e) {
-                return e.getMessage();
-            } catch (Exception e) {
-                return e.toString();
-            }
-        }
-
-        @Override
-        public Set<String> getLanguages() {
-            return delegate.getLanguages();
-        }
-
     }
 
 }

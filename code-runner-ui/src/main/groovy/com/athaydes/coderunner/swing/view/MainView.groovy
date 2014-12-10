@@ -1,11 +1,14 @@
 package com.athaydes.coderunner.swing.view
 
+import com.athaydes.coderunner.swing.SafeCodeRunner
 import groovy.beans.Bindable
 import groovy.swing.SwingBuilder
-import com.athaydes.coderunner.CompositeCodeRunner
 
-import javax.swing.*
-import java.awt.*
+import javax.swing.JComboBox
+import javax.swing.JFrame
+import javax.swing.JTextArea
+import java.awt.Color
+import java.awt.Dimension
 
 class MainView {
 
@@ -15,24 +18,22 @@ class MainView {
     }
 
     private final builder = new SwingBuilder()
-    private final CompositeCodeRunner codeRunner
+    private final SafeCodeRunner codeRunner
     private final Model model = new Model()
 
     private JFrame theFrame
     private JComboBox langsCombo = null
+    private JTextArea resultText = null
 
-
-    MainView( CompositeCodeRunner codeRunner ) {
+    MainView( SafeCodeRunner codeRunner ) {
         this.codeRunner = codeRunner
     }
 
     void create() {
         destroy()
-        JTextArea resultText = null
-
         builder.edt {
             theFrame = frame( title: 'D-OSGi IPojo Demo', show: true,
-                    size: [ 500, 500 ], locationRelativeTo: null ) {
+                    size: [ 500, 500 ] as Dimension, locationRelativeTo: null ) {
                 vbox {
                     vstrut 10
                     def sourceArea = textArea( editable: true )
@@ -42,7 +43,9 @@ class MainView {
                         button( text: 'Run',
                                 enabled: bind { model.language != null },
                                 actionPerformed: {
-                                    resultText.text = codeRunner.runScript( model.language, sourceArea.text )
+                                    codeRunner.runScript model.language, sourceArea.text,
+                                            { result -> setText result, Color.black },
+                                            { failure -> setText failure, Color.red }
                                 } )
                         hstrut 5
                         label 'Language:'
@@ -68,15 +71,26 @@ class MainView {
         theFrame?.dispose()
     }
 
+    private void setText( text, color ) {
+        builder.edt {
+            resultText.foreground = color
+            resultText.text = text
+        }
+    }
+
     private void updateLanguages() {
         if ( langsCombo ) {
             def item = langsCombo.selectedItem
             langsCombo.removeAllItems()
-            codeRunner.languages.toList().sort().each { String lang ->
-                langsCombo.addItem( lang )
-            }
-            if ( item )
-                langsCombo.selectedItem = item
+            codeRunner.getLanguages( { languages ->
+                languages.toList().sort().each { String lang ->
+                    langsCombo.addItem( lang )
+                }
+                if ( item ) langsCombo.selectedItem = item
+            }, { failure ->
+                setText 'NO LANGUAGES AVAILABLE!', Color.red
+            } )
+
         }
     }
 
