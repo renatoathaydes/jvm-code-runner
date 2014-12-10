@@ -1,0 +1,7 @@
+rootProject.name = 'jvm-code-runner'
+
+include 'code-runner-api',
+        'code-runner-server',
+        'code-runner-ui',
+        'groovy-2-3-3-runner',
+        'javascript-runner'

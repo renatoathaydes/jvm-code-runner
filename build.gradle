@@ -1,0 +1,46 @@
+apply plugin: 'osgi-run'
+
+buildscript {
+    repositories {
+        mavenLocal()
+        jcenter()
+    }
+    dependencies {
+        classpath group: 'com.athaydes.gradle.osgi', name: 'osgi-run-core', version: '1.1'
+        classpath group: 'com.athaydes.gradle.osgi', name: 'ipojo-plugin', version: '1.1'
+    }
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        jcenter()
+    }
+}
+
+subprojects {
+    apply plugin: 'ipojo'
+
+    dependencies {
+        compile 'org.apache.felix:org.apache.felix.ipojo.annotations:1.12.0'
+    }
+}
+
+dependencies {
+    osgiRuntime( 'org.apache.cxf.dosgi:cxf-dosgi-ri-singlebundle-distribution:1.4.0' ) {
+        transitive = false
+    }
+}
+
+def clientConfig = project.hasProperty( 'client' )
+
+def clientBundles = [ 'code-runner-api', 'code-runner-ui' ]
+def serverBundles = [ 'code-runner-api', 'code-runner-server', 'groovy-2-3-3-runner', 'javascript-runner' ]
+
+runOsgi {
+    bundles = IPOJO_ALL_BUNDLES + subprojects.findAll {
+        it.name in ( clientConfig ? clientBundles : serverBundles )
+    }
+    outDir = clientConfig ? 'client' : 'server'
+    config += [ 'org.osgi.framework.system.packages.extra': 'sun.reflect' ]
+}
